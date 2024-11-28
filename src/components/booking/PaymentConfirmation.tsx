@@ -1,6 +1,7 @@
 import { User, Mail, Phone, MapPin, Building2, Globe, MapPinned } from 'lucide-react';
 import { MappedRoom } from '../../types/room';
 import { useState } from 'react';
+import { FlutterwaveService } from '../../services/FlutterwaveService';
 
 interface PaymentConfirmationProps {
   checkIn: Date;
@@ -40,6 +41,7 @@ export default function PaymentConfirmation({
     city: '',
     country: ''
   });
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleInputChange = (field: keyof GuestInfo) => (
     e: React.ChangeEvent<HTMLInputElement>
@@ -50,26 +52,62 @@ export default function PaymentConfirmation({
     }));
   };
 
-  const handleContinueToPayment = () => {
-    // Here you would typically validate the form and process the payment
-    if (!guestInfo.fullName || !guestInfo.email || !guestInfo.phone) {
+  const handleContinueToPayment = async () => {
+    // Validate required fields
+    if (!guestInfo.fullName || !guestInfo.email || !guestInfo.phone || !guestInfo.address || !guestInfo.city || !guestInfo.country) {
       alert('Please fill in all required fields');
       return;
     }
 
-    // For now, just log the booking details
-    console.log('Booking Details:', {
-      guestInfo,
-      checkIn,
-      checkOut,
-      adults,
-      children,
-      room,
-      services
-    });
+    if (!room) {
+      alert('No room selected');
+      return;
+    }
 
-    // Here you would integrate with your payment provider
-    alert('Payment integration will be implemented here');
+    setIsProcessing(true);
+
+    try {
+      const flutterwaveService = new FlutterwaveService();
+      const tx_ref = flutterwaveService.generateTransactionRef();
+
+      // Calculate total amount
+      const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+      const roomTotal = room.rates[0].baseRate * nights;
+      const extraAdultsTotal = adults > 2 ? room.rates[0].extraAdultRate * (adults - 2) * nights : 0;
+      const extraChildrenTotal = children > 0 ? room.rates[0].extraChildRate * children * nights : 0;
+      const servicesTotal = services.length * 50;
+      const totalAmount = Math.round(roomTotal + extraAdultsTotal + extraChildrenTotal + servicesTotal);
+
+      // Format phone number to remove spaces and ensure it starts with country code
+      const formattedPhone = guestInfo.phone.replace(/[^0-9]/g, '');
+      const phoneWithCode = formattedPhone.startsWith('254') ? formattedPhone : `254${formattedPhone.replace(/^0+/, '')}`;
+
+      console.log('Payment Data:', {
+        amount: totalAmount,
+        currency: 'KES',
+        email: guestInfo.email,
+        phone_number: phoneWithCode,
+        name: guestInfo.fullName,
+        tx_ref,
+        redirect_url: `${window.location.origin}/booking/confirmation`
+      });
+
+      await flutterwaveService.initializePayment({
+        amount: totalAmount,
+        currency: 'KES',
+        email: guestInfo.email,
+        phone_number: phoneWithCode,
+        name: guestInfo.fullName,
+        tx_ref,
+        redirect_url: `${window.location.origin}/booking/confirmation`
+      });
+
+    } catch (error) {
+      console.error('Payment initialization failed:', error);
+      alert('Unable to initialize payment. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -220,9 +258,17 @@ export default function PaymentConfirmation({
         </button>
         <button 
           onClick={handleContinueToPayment}
-          className="w-2/3 py-3 bg-amber-600 text-white rounded-full font-medium hover:bg-amber-700 transition-colors"
+          disabled={isProcessing}
+          className="w-2/3 py-3 bg-amber-600 text-white rounded-full font-medium hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          Continue to Payment
+          {isProcessing ? (
+            <>
+              <span className="animate-spin">⌛</span>
+              Processing...
+            </>
+          ) : (
+            'Continue to Payment'
+          )}
         </button>
       </div>
     </div>
