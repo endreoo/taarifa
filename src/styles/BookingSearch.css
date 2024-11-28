@@ -1,0 +1,30 @@
+.rate-details {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.rate-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.rate-amounts {
+  display: flex;
+  gap: 1rem;
+}
+
+.rate-kes {
+  color: #333;
+}
+
+.rate-usd {
+  color: #666;
+  font-size: 0.9em;
+}
+
+.rate-label {
+  font-weight: 500;
+} 
