@@ -33,4 +33,17 @@ export interface LowestRoomRate {
   roomTypeId: string;
   lowestRate: number;
   lastUpdated: Date;
+}
+
+export interface RoomMapping {
+  ezeeRoomTypeId: string[];
+  websiteRoomId: string;
+  name: string;
+  description: string;
+  image: string;
+  maxOccupancy: {
+    adults: number;
+    children: number;
+  };
+  amenities: string[];
 } 

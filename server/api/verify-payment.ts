@@ -1,4 +1,4 @@
-import { config } from '../../src/config/environment';
+import { config } from '../../src/config/environment.js';
 
 export default async function handler(req: Request) {
   const transactionId = req.url.split('/').pop();

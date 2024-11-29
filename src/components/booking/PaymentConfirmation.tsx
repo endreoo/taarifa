@@ -82,6 +82,21 @@ export default function PaymentConfirmation({
       const formattedPhone = guestInfo.phone.replace(/[^0-9]/g, '');
       const phoneWithCode = formattedPhone.startsWith('254') ? formattedPhone : `254${formattedPhone.replace(/^0+/, '')}`;
 
+      // Store booking data in session storage
+      sessionStorage.setItem('bookingData', JSON.stringify({
+        checkIn,
+        checkOut,
+        room,
+        adults,
+        children,
+        services,
+        guestInfo: {
+          ...guestInfo,
+          phone: phoneWithCode
+        },
+        amount: totalAmount
+      }));
+
       console.log('Payment Data:', {
         amount: totalAmount,
         currency: 'KES',

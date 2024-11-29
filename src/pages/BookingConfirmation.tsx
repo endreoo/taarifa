@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FlutterwaveService } from '../services/FlutterwaveService';
+import { EzeeBookingService } from '../services/EzeeBookingService';
 import { CheckCircle, XCircle } from 'lucide-react';
 
 interface PaymentStatus {
@@ -21,8 +22,9 @@ export default function BookingConfirmation() {
       const params = new URLSearchParams(location.search);
       const transactionId = params.get('transaction_id');
       const status = params.get('status');
+      const bookingData = JSON.parse(sessionStorage.getItem('bookingData') || '{}');
 
-      if (!transactionId || status !== 'successful') {
+      if (!transactionId || status !== 'successful' || !bookingData) {
         setPaymentStatus({
           status: 'failed',
           message: 'Payment was not successful. Please try again.'
@@ -35,10 +37,44 @@ export default function BookingConfirmation() {
         const response = await flutterwaveService.verifyTransaction(transactionId);
 
         if (response.status === 'successful') {
-          setPaymentStatus({
-            status: 'success',
-            message: 'Payment successful! Your booking has been confirmed.'
-          });
+          try {
+            const ezeeBookingService = new EzeeBookingService();
+            const booking = await ezeeBookingService.createBooking({
+              checkInDate: new Date(bookingData.checkIn),
+              checkOutDate: new Date(bookingData.checkOut),
+              roomTypeId: bookingData.room.roomTypeId,
+              numberOfRooms: 1,
+              guestName: bookingData.guestInfo.fullName,
+              guestEmail: bookingData.guestInfo.email,
+              guestPhone: bookingData.guestInfo.phone,
+              guestAddress: bookingData.guestInfo.address,
+              guestCity: bookingData.guestInfo.city,
+              guestCountry: bookingData.guestInfo.country,
+              numberOfAdults: bookingData.adults,
+              numberOfChildren: bookingData.children,
+              specialRequests: '',
+              paymentAmount: response.amount,
+              paymentReference: transactionId,
+              paymentStatus: 'Confirmed'
+            });
+
+            if (booking.success) {
+              setPaymentStatus({
+                status: 'success',
+                message: `Payment successful! Your booking #${booking.bookingId} has been confirmed.`
+              });
+              // Clear booking data from session storage
+              sessionStorage.removeItem('bookingData');
+            } else {
+              throw new Error('Failed to create booking in eZee');
+            }
+          } catch (error) {
+            console.error('Error creating eZee booking:', error);
+            setPaymentStatus({
+              status: 'failed',
+              message: 'Payment was successful but booking creation failed. Our team will contact you shortly.'
+            });
+          }
         } else {
           setPaymentStatus({
             status: 'failed',
@@ -46,6 +82,7 @@ export default function BookingConfirmation() {
           });
         }
       } catch (error) {
+        console.error('Error:', error);
         setPaymentStatus({
           status: 'failed',
           message: 'An error occurred while verifying payment. Please contact support.'

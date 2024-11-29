@@ -8,15 +8,10 @@ export default defineConfig({
     port: 5170,
     host: true,
     proxy: {
-      '/api/ezee': {
-        target: 'https://live.ipms247.com',
+      '/api': {
+        target: 'http://localhost:5170',
         changeOrigin: true,
-        rewrite: (path) => '/pmsinterface/getdataAPI.php',
-        secure: false,
-        headers: {
-          'Content-Type': 'application/xml',
-          'Accept': 'application/xml'
-        }
+        secure: false
       }
     }
   }
