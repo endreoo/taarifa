@@ -1,55 +1,35 @@
-import express, { Request, Response, NextFunction, RequestHandler, ErrorRequestHandler } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import bodyParser from 'body-parser';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { config } from '../src/config/environment.js';
+import { XMLParser } from 'fast-xml-parser';
 
 const app = express();
 
-// Add request logging middleware
-const requestLogger: RequestHandler = (req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  console.log('Headers:', req.headers);
-  console.log('Body:', req.body);
-  next();
-};
-
-app.use(requestLogger);
-
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Accept', 'X-Ezee-Url', 'X-Ezee-Hotel', 'X-Ezee-Auth'],
-  exposedHeaders: ['Content-Type', 'Accept']
-}));
-
+app.use(cors());
 app.use(bodyParser.text({ type: 'application/xml' }));
 
-// eZee API proxy endpoint
-const ezeeHandler: RequestHandler = async (req, res, next) => {
+// Add request logging middleware
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+app.post('/api/ezee', async (req: Request, res: Response) => {
   try {
     console.log('=== Received eZee API Request ===');
     console.log('Headers:', req.headers);
     console.log('Body:', req.body);
 
-    const ezeeUrl = req.get('x-ezee-url');
-    const hotelCode = req.get('x-ezee-hotel');
-    const authCode = req.get('x-ezee-auth');
-
-    if (!ezeeUrl || !hotelCode || !authCode) {
-      res.status(400).json({
-        error: 'Missing required headers'
-      });
-      return;
-    }
+    const ezeeUrl = 'https://live.ipms247.com/pmsinterface/getdataAPI.php';
+    const hotelCode = config.ezeeApi.hotelCode;
+    const authCode = config.ezeeApi.authCode;
 
     console.log('Making eZee API call:', {
       url: ezeeUrl,
       hotelCode,
+      authCode,
       body: req.body
     });
 
@@ -59,10 +39,12 @@ const ezeeHandler: RequestHandler = async (req, res, next) => {
       {
         headers: {
           'Content-Type': 'application/xml',
-          'Accept': 'application/xml'
+          'Accept': 'application/xml',
+          'Authorization': `Basic ${Buffer.from(`${hotelCode}:${authCode}`).toString('base64')}`
         },
-        timeout: 10000, // 10 second timeout
-        maxRedirects: 5
+        timeout: 60000,
+        maxRedirects: 5,
+        validateStatus: (status) => status < 500
       }
     );
 
@@ -72,37 +54,62 @@ const ezeeHandler: RequestHandler = async (req, res, next) => {
       data: response.data
     });
 
-    res.send(response.data);
-  } catch (error) {
-    next(error);
+    if (response.data && response.data.includes('ErrorCode')) {
+      const parser = new XMLParser();
+      const result = parser.parse(response.data);
+      if (result.Errors) {
+        console.error('eZee API Error:', result.Errors);
+        res.status(400).json({
+          error: 'eZee API Error',
+          code: result.Errors.ErrorCode,
+          message: result.Errors.ErrorMessage
+        });
+        return;
+      }
+    }
+
+    if (response.status === 200) {
+      res.send(response.data);
+    } else {
+      throw new Error(`eZee API returned status ${response.status}`);
+    }
+  } catch (error: any) {
+    console.error('eZee API Error:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      stack: error.stack
+    });
+    
+    if (error.response?.status === 502) {
+      res.status(502).json({
+        error: 'Bad Gateway',
+        message: 'The eZee API is temporarily unavailable. Please try again later.'
+      });
+    } else {
+      res.status(500).json({
+        error: 'Failed to fetch from eZee API',
+        message: error.message
+      });
+    }
   }
-};
+});
 
-app.post('/api/ezee', ezeeHandler);
+app.get('/api/health', (req: Request, res: Response) => {
+  res.json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    environment: process.env.NODE_ENV
+  });
+});
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5170;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log('Environment:', process.env.NODE_ENV);
-  console.log('CORS origin:', process.env.NODE_ENV === 'production' ? 'https://yourdomain.com' : 'http://localhost:5170');
-});
-
-// Error handling middleware
-const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  console.error('=== eZee API Error ===');
-  if (axios.isAxiosError(err)) {
-    console.error('Request config:', err.config);
-    console.error('Response:', err.response?.data);
-    console.error('Status:', err.response?.status);
-    console.error('Headers:', err.response?.headers);
-  }
-  console.error('Full error:', err);
-  
-  res.status(500).json({ 
-    error: 'Failed to fetch from eZee API',
-    details: err instanceof Error ? err.message : 'Unknown error',
-    stack: err instanceof Error ? err.stack : undefined
+  console.log('eZee API Config:', {
+    hotelCode: config.ezeeApi.hotelCode,
+    authCode: config.ezeeApi.authCode
   });
-};
-
-app.use(errorHandler); 
+}); 

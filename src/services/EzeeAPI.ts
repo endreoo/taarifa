@@ -78,16 +78,19 @@ export class EzeeAPI {
           headers: {
             'Content-Type': 'application/xml',
             'Accept': 'application/xml',
-            'X-Ezee-Url': 'https://live.ipms247.com/pmsinterface/getdataAPI.php',
+            'X-Ezee-Url': this.baseUrl,
             'X-Ezee-Hotel': this.hotelCode,
             'X-Ezee-Auth': this.authCode
           },
-          withCredentials: false
+          timeout: 60000,
+          maxRedirects: 5
         }
       );
 
-      console.log('API Response:', response.data);
-      
+      if (!response.data) {
+        throw new Error('Empty response from API');
+      }
+
       const parser = new XMLParser({
         ignoreAttributes: false,
         attributeNamePrefix: "@_"
@@ -95,21 +98,21 @@ export class EzeeAPI {
       const result = parser.parse(response.data);
 
       if (result.RES_Response?.Errors) {
-        throw new Error(`API Error: ${JSON.stringify(result.RES_Response.Errors)}`);
+        console.error('eZee API Error:', result.RES_Response.Errors);
+        throw new Error(`eZee API Error: ${JSON.stringify(result.RES_Response.Errors)}`);
+      }
+
+      if (!result.RES_Response?.RoomInfo) {
+        console.error('Invalid response format:', result);
+        throw new Error('Invalid response format from eZee API');
       }
 
       return result;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error('API Call Failed:', {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
-          headers: error.response?.headers,
-          message: error.message,
-          code: error.code
-        });
-      }
+      console.error('API Call Failed:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        requestXml
+      });
       throw error;
     }
   }
@@ -138,7 +141,8 @@ export class EzeeAPI {
       name: mapping.name,
       description: mapping.description,
       image: mapping.image,
-      maxOccupancy: mapping.maxOccupancy
+      maxOccupancy: mapping.maxOccupancy,
+      amenities: (mapping as any).amenities || []
     };
   }
 
@@ -250,7 +254,8 @@ export class EzeeAPI {
           name: mapping.name,
           description: mapping.description,
           image: mapping.image,
-          maxOccupancy: mapping.maxOccupancy
+          maxOccupancy: mapping.maxOccupancy,
+          amenities: (mapping as any).amenities || []
         };
       }).filter(room => room !== null);
 
