@@ -1,19 +1,60 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import bodyParser from 'body-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 import { config } from '../src/config/environment.js';
 import { XMLParser } from 'fast-xml-parser';
+import { register, signin, getProfile } from './api/auth.js';
+
+// @ts-ignore
+import whatsappRoutes from './api/whatsapp.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 
+// Middleware
 app.use(cors());
+app.use(bodyParser.json());
 app.use(bodyParser.text({ type: 'application/xml' }));
 
 // Add request logging middleware
 app.use((req: Request, _res: Response, next: NextFunction) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
+});
+
+// API Routes - Keep all API routes before the static file handling
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    await register(req, res);
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/auth/signin', async (req, res) => {
+  try {
+    await signin(req, res);
+  } catch (error) {
+    console.error('Sign in error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/auth/profile', async (req, res) => {
+  try {
+    await getProfile(req, res);
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 app.post('/api/ezee', async (req: Request, res: Response) => {
@@ -25,13 +66,6 @@ app.post('/api/ezee', async (req: Request, res: Response) => {
     const ezeeUrl = 'https://live.ipms247.com/pmsinterface/getdataAPI.php';
     const hotelCode = config.ezeeApi.hotelCode;
     const authCode = config.ezeeApi.authCode;
-
-    console.log('Making eZee API call:', {
-      url: ezeeUrl,
-      hotelCode,
-      authCode,
-      body: req.body
-    });
 
     const response = await axios.post(
       ezeeUrl,
@@ -54,25 +88,25 @@ app.post('/api/ezee', async (req: Request, res: Response) => {
       data: response.data
     });
 
-    if (response.data && response.data.includes('ErrorCode')) {
-      const parser = new XMLParser();
-      const result = parser.parse(response.data);
-      if (result.Errors) {
-        console.error('eZee API Error:', result.Errors);
-        res.status(400).json({
-          error: 'eZee API Error',
-          code: result.Errors.ErrorCode,
-          message: result.Errors.ErrorMessage
-        });
-        return;
-      }
+    const parser = new XMLParser();
+    const result = parser.parse(response.data);
+
+    if (result.Errors) {
+      console.error('eZee API Error:', result.Errors);
+      res.status(400).json({
+        error: 'eZee API Error',
+        code: result.Errors.ErrorCode,
+        message: result.Errors.ErrorMessage
+      });
+      return;
     }
 
     if (response.status === 200) {
       res.send(response.data);
-    } else {
-      throw new Error(`eZee API returned status ${response.status}`);
+      return;
     }
+    
+    throw new Error(`eZee API returned status ${response.status}`);
   } catch (error: any) {
     console.error('eZee API Error:', {
       message: error.message,
@@ -86,30 +120,31 @@ app.post('/api/ezee', async (req: Request, res: Response) => {
         error: 'Bad Gateway',
         message: 'The eZee API is temporarily unavailable. Please try again later.'
       });
-    } else {
-      res.status(500).json({
-        error: 'Failed to fetch from eZee API',
-        message: error.message
-      });
+      return;
     }
+    
+    res.status(500).json({
+      error: 'Failed to fetch from eZee API',
+      message: error.message
+    });
   }
 });
 
-app.get('/api/health', (req: Request, res: Response) => {
-  res.json({ 
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    port: PORT,
-    environment: process.env.NODE_ENV
-  });
+// API routes
+app.use('/api/whatsapp', whatsappRoutes);
+
+// Static file serving - After API routes
+const distPath = path.resolve(process.cwd(), 'dist');
+app.use(express.static(distPath));
+
+// Catch-all route for React app - Must be last
+app.get('*', (_req: Request, res: Response) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 const PORT = process.env.PORT || 5170;
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log('Environment:', process.env.NODE_ENV);
-  console.log('eZee API Config:', {
-    hotelCode: config.ezeeApi.hotelCode,
-    authCode: config.ezeeApi.authCode
-  });
 }); 
