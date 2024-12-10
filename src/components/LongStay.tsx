@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { Check } from 'lucide-react';
 import LongStayBookingModal from './booking/LongStayBookingModal';
+import { images } from '../config/images';
 
 export default function LongStay() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,7 +27,7 @@ export default function LongStay() {
           >
             <h2 className="text-4xl font-serif font-bold mb-6">Extended Stay Packages</h2>
             <p className="text-gray-600 mb-8">
-              Make Taariifa Suites your home away from home with our tailored long-stay packages. 
+              Make Taarifa Suites your home away from home with our tailored long-stay packages. 
               Perfect for business travelers, digital nomads, and those seeking an extended luxury experience in Nairobi.
             </p>
             
@@ -62,7 +63,7 @@ export default function LongStay() {
             className="relative h-[600px]"
           >
             <img
-              src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+              src={images.rooms.studio}
               alt="Long Stay Suite"
               className="absolute inset-0 w-full h-full object-cover rounded-lg shadow-xl"
             />

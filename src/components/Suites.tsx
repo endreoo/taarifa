@@ -1,12 +1,13 @@
 import { Wifi, Coffee, Tv, Bath } from 'lucide-react';
 import { useBooking } from '../context/BookingContext';
+import { images } from '../config/images';
 
 const roomTypes = [
   {
     id: 1,
     room_type_name: 'Studio Apartment',
     description: 'Modern studio apartment with kitchenette, perfect for solo travelers or couples',
-    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
+    image: images.rooms.studio,
     number_of_guests: 2,
     breakfast: true,
     internet_included: 'yes',
@@ -17,7 +18,7 @@ const roomTypes = [
     id: 2,
     room_type_name: 'One Bedroom Apartment',
     description: 'Spacious apartment with separate bedroom and full kitchen, ideal for extended stays',
-    image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?ixlib=rb-4.0.3&auto=format&fit=crop&w=2071&q=80',
+    image: images.rooms.oneBedroom,
     number_of_guests: 3,
     breakfast: true,
     internet_included: 'yes',
@@ -28,7 +29,7 @@ const roomTypes = [
     id: 3,
     room_type_name: 'Two Bedroom Apartment',
     description: 'Luxurious two bedroom apartment with full kitchen and living area, perfect for families',
-    image: 'https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
+    image: images.rooms.twoBedroom,
     number_of_guests: 4,
     breakfast: true,
     internet_included: 'yes',

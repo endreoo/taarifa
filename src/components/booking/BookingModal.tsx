@@ -11,6 +11,7 @@ import BookingSummary from './BookingSummary';
 import { useNavigate } from 'react-router-dom';
 import { useBooking } from '../../context/BookingContext';
 import { format } from 'date-fns';
+import { images } from '../../config/images';
 
 export default function BookingModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const navigate = useNavigate();
@@ -79,9 +80,9 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean; onC
 
   // Add standard room images
   const roomImages = {
-    studio: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-    oneBedroom: "https://images.unsplash.com/photo-1502005097973-6a7082348e28?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-    twoBedroom: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+    studio: images.rooms.studio,
+    oneBedroom: images.rooms.oneBedroom,
+    twoBedroom: images.rooms.twoBedroom
   };
 
   return (

@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-xl font-bold mb-4">Taariifa Suites</h3>
+            <h3 className="text-xl font-bold mb-4">Taarifa Suites</h3>
             <p className="text-gray-400 mb-4">
               Experience luxury living in the heart of Parklands, Nairobi. 
               Perfect for both short stays and extended residences.
@@ -30,7 +30,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center">
                 <Mail className="w-5 h-5 mr-2" />
-                <a href="mailto:info@taariifasuites.com">info@taariifasuites.com</a>
+                <a href="mailto:info@taarifasuites.com">info@taarifasuites.com</a>
               </div>
             </div>
           </div>
@@ -48,7 +48,7 @@ export default function Footer() {
       <div className="border-t border-gray-800">
         <div className="container mx-auto px-4 py-6">
           <p className="text-center text-gray-400">
-            © {new Date().getFullYear()} Taariifa Suites. All rights reserved.
+            © {new Date().getFullYear()} Taarifa Suites. All rights reserved.
           </p>
         </div>
       </div>

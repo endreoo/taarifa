@@ -3,15 +3,16 @@ import { EzeeAPI } from '../../services/EzeeAPI';
 import { MappedRoom } from '../../types/room';
 import { format } from 'date-fns';
 import { useBooking } from '../../context/BookingContext';
+import { images } from '../../config/images';
 
 interface RoomListProps {
   onSelect: (room: MappedRoom) => void;
 }
 
 const roomImages = {
-  'Studio Apartment': "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-  'One Bedroom Apartment': "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?ixlib=rb-4.0.3&auto=format&fit=crop&w=2071&q=80",
-  'Two Bedroom Apartment': "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+  'Studio Apartment': images.rooms.studio,
+  'One Bedroom Apartment': images.rooms.oneBedroom,
+  'Two Bedroom Apartment': images.rooms.twoBedroom
 };
 
 const roomFeatures = {

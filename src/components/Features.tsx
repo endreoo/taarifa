@@ -30,7 +30,7 @@ export default function Features() {
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <h2 className="text-4xl font-serif font-bold mb-4">Why Choose Taariifa Suites?</h2>
+          <h2 className="text-4xl font-serif font-bold mb-4">Why Choose Taarifa Suites?</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
             Experience the perfect blend of luxury living and convenience in Nairobi's most prestigious neighborhood
           </p>

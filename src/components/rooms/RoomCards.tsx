@@ -1,6 +1,7 @@
 import { Wifi, Coffee, Tv, Bath } from 'lucide-react';
 import { useBooking } from '../../context/BookingContext';
 import { MappedRoom } from '../../types/room';
+import { images } from '../../config/images';
 
 const roomTypes: MappedRoom[] = [
   {
@@ -8,7 +9,7 @@ const roomTypes: MappedRoom[] = [
     websiteRoomId: 'studio',
     name: 'Studio Apartment',
     description: 'Modern studio apartment with kitchenette, perfect for solo travelers or couples',
-    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
+    image: images.rooms.studio,
     availability: 5,
     maxOccupancy: {
       adults: 2,
